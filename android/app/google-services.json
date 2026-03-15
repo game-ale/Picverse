@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "87924268460",
+    "project_id": "picverse-1d8dd",
+    "storage_bucket": "picverse-1d8dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87924268460:android:0e40d5a82819d75250ee09",
+        "android_client_info": {
+          "package_name": "com.picverse.picverse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCg0P2opiKIinGm39_GRL-TxZ-YibkL1Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
