@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:picverse/core/constants/app_constants.dart';
+import 'package:picverse/core/data/datasources/firestore_datasource.dart';
 import 'package:picverse/features/post/data/models/comment_model.dart';
 import 'package:picverse/features/notification/data/models/notification_model.dart';
 import 'package:picverse/features/post/data/models/post_model.dart';
 import 'package:picverse/features/admin/data/models/report_model.dart';
 import 'package:picverse/features/auth/data/models/user_model.dart';
 
-class FirestoreService {
+class FirestoreService implements FirestoreDatasource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // ─── Collection Refs ───
