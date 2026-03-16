@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:picverse/core/constants/app_constants.dart';
+import 'package:picverse/core/data/datasources/storage_datasource.dart';
 
-class StorageService {
+class StorageService implements StorageDatasource {
   SupabaseClient get _client => Supabase.instance.client;
 
   Future<String> uploadPostImage(
