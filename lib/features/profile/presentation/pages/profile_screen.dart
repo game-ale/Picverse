@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
+import 'package:picverse/core/local/language_cubit.dart';
 import 'package:picverse/core/services/auth_service.dart';
 import 'package:picverse/core/theme/theme_cubit.dart';
 import 'package:picverse/core/widgets/shimmer_loading.dart';
@@ -33,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final currentUid = context.read<AuthService>().currentUser?.uid ?? '';
     final isOwnProfile = currentUid == widget.userId;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +62,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () => _showLogoutSheet(context),
                 ),
               ]
-            : null,
+            : [
+                IconButton(
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  onPressed: () => context.push('/chats/open/${widget.userId}'),
+                ),
+              ],
       ),
       body: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
@@ -72,13 +80,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.errorMessage ?? 'Error loading profile'),
+                  Text(state.errorMessage ?? l10n.text('errorLoadingProfile')),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: () => context.read<ProfileBloc>().add(
                       ProfileLoadRequested(userId: widget.userId),
                     ),
-                    child: const Text('Retry'),
+                    child: Text(l10n.text('retry')),
                   ),
                 ],
               ),
@@ -117,6 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showLogoutSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -132,23 +141,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ThemeMode.system => Icons.brightness_auto,
                 };
                 final label = switch (mode) {
-                  ThemeMode.light => 'Light Mode',
-                  ThemeMode.dark => 'Dark Mode',
-                  ThemeMode.system => 'System Default',
+                  ThemeMode.light => l10n.text('lightMode'),
+                  ThemeMode.dark => l10n.text('darkMode'),
+                  ThemeMode.system => l10n.text('systemDefault'),
                 };
                 return ListTile(
                   leading: Icon(icon, color: AppColors.primaryPurple),
                   title: Text(label),
-                  subtitle: const Text('Tap to change theme'),
+                  subtitle: Text(l10n.text('tapChangeTheme')),
                   onTap: () => context.read<ThemeCubit>().toggleTheme(),
+                );
+              },
+            ),
+            const Divider(height: 1),
+            BlocBuilder<LanguageCubit, Locale>(
+              builder: (context, locale) {
+                return Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.language, color: AppColors.primaryPurple),
+                      title: Text(l10n.text('selectLanguage')),
+                    ),
+                    for (final option in const [
+                      Locale('en'),
+                      Locale('om'),
+                      Locale('am'),
+                    ])
+                      ListTile(
+                        title: Text(
+                          switch (option.languageCode) {
+                            'en' => l10n.text('english'),
+                            'om' => l10n.text('afaanOromo'),
+                            _ => l10n.text('amharic'),
+                          },
+                        ),
+                        trailing: locale.languageCode == option.languageCode
+                            ? const Icon(Icons.check, color: AppColors.primaryPurple)
+                            : null,
+                        onTap: () => context.read<LanguageCubit>().setLanguage(option),
+                      ),
+                  ],
                 );
               },
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.logout, color: AppColors.error),
-              title: const Text(
-                'Log out',
+              title: Text(
+                l10n.text('logOut'),
                 style: TextStyle(color: AppColors.error),
               ),
               onTap: () {

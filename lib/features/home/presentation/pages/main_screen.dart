@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 
 class MainScreen extends StatefulWidget {
   final Widget child;
@@ -33,6 +34,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: widget.child,
@@ -56,31 +58,31 @@ class _MainScreenState extends State<MainScreen> {
               ? AppColors.primaryPurple
               : AppColors.primaryDark,
           unselectedItemColor: isDark ? AppColors.grey500 : AppColors.grey400,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home_rounded),
+              label: l10n.text('home'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              activeIcon: Icon(Icons.search_rounded),
-              label: 'Search',
+              icon: const Icon(Icons.search_outlined),
+              activeIcon: const Icon(Icons.search_rounded),
+              label: l10n.text('search'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.add_box_outlined),
-              activeIcon: Icon(Icons.add_box_rounded),
-              label: 'Post',
+              icon: const Icon(Icons.add_box_outlined),
+              activeIcon: const Icon(Icons.add_box_rounded),
+              label: l10n.text('post'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_outline),
-              activeIcon: Icon(Icons.favorite_rounded),
-              label: 'Notifications',
+              icon: const Icon(Icons.favorite_outline),
+              activeIcon: const Icon(Icons.favorite_rounded),
+              label: l10n.text('notifications'),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person_rounded),
+              label: l10n.text('profile'),
             ),
           ],
         ),

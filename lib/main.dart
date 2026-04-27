@@ -1,31 +1,31 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:picverse/core/local/hive_adapters.dart';
+import 'package:picverse/core/local/app_localizations.dart';
+import 'package:picverse/core/local/fallback_localization_delegates.dart';
+import 'package:picverse/core/local/language_cubit.dart';
 import 'package:picverse/core/theme/app_theme.dart';
 import 'package:picverse/core/theme/theme_cubit.dart';
 import 'package:picverse/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:picverse/core/services/push_notification_service.dart';
+import 'package:picverse/firebase_options.dart';
 import 'package:picverse/injection_container.dart';
 import 'package:picverse/routes/app_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
-
-  // Initialize Firebase
-  await Firebase.initializeApp();
-
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'] ?? '',
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+  // Initialize Firebase with platform-specific options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
@@ -38,24 +38,42 @@ Future<void> main() async {
   // Theme preference
   final themeCubit = ThemeCubit();
   await themeCubit.init();
+  final languageCubit = LanguageCubit();
+  await languageCubit.init();
 
   // Dependency injection
   final di = InjectionContainer();
   await di.init();
+  await di.pushNotificationService.init();
 
-  runApp(PicverseApp(di: di, themeCubit: themeCubit));
+  runApp(
+    PicverseApp(
+      di: di,
+      themeCubit: themeCubit,
+      languageCubit: languageCubit,
+    ),
+  );
 }
 
 class PicverseApp extends StatelessWidget {
   final InjectionContainer di;
   final ThemeCubit themeCubit;
+  final LanguageCubit languageCubit;
 
-  const PicverseApp({super.key, required this.di, required this.themeCubit});
+  const PicverseApp({
+    super.key,
+    required this.di,
+    required this.themeCubit,
+    required this.languageCubit,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: themeCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: themeCubit),
+        BlocProvider.value(value: languageCubit),
+      ],
       child: MultiRepositoryProvider(
         providers: di.repositoryProviders,
         child: MultiBlocProvider(
@@ -67,13 +85,26 @@ class PicverseApp extends StatelessWidget {
 
               return BlocBuilder<ThemeCubit, ThemeMode>(
                 builder: (context, themeMode) {
-                  return MaterialApp.router(
-                    title: 'Picverse',
-                    debugShowCheckedModeBanner: false,
-                    theme: AppTheme.lightTheme,
-                    darkTheme: AppTheme.darkTheme,
-                    themeMode: themeMode,
-                    routerConfig: router,
+                  return BlocBuilder<LanguageCubit, Locale>(
+                    builder: (context, locale) {
+                      return MaterialApp.router(
+                        title: 'Picverse',
+                        debugShowCheckedModeBanner: false,
+                        theme: AppTheme.lightTheme,
+                        darkTheme: AppTheme.darkTheme,
+                        themeMode: themeMode,
+                        locale: locale,
+                        supportedLocales:
+                            AppLocalizations.supportedLocales,
+                        localizationsDelegates: const [
+                          AppLocalizations.delegate,
+                          AppMaterialLocalizationsDelegate(),
+                          GlobalWidgetsLocalizations.delegate,
+                          AppCupertinoLocalizationsDelegate(),
+                        ],
+                        routerConfig: router,
+                      );
+                    },
                   );
                 },
               );

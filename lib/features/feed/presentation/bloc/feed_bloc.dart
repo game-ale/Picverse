@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:picverse/core/constants/app_constants.dart';
 import 'package:picverse/core/local/local_cache_service.dart';
 import 'package:picverse/features/post/data/models/post_model.dart';
 import 'package:picverse/features/feed/domain/repositories/feed_repository.dart';
@@ -33,6 +34,7 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
        super(const FeedState()) {
     on<FeedLoadRequested>(_onLoad);
     on<FeedRefreshRequested>(_onRefresh);
+    on<FeedLoadMoreRequested>(_onLoadMore);
     on<FeedPostLikeToggled>(_onLikeToggle);
     on<FeedConnectivityChanged>(_onConnectivityChanged);
 
@@ -86,6 +88,7 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
           posts: posts,
           likedPostIds: likedIds,
           isOffline: false,
+          hasReachedEnd: posts.length < AppConstants.feedPageSize,
         ),
       );
     } catch (e) {
@@ -117,6 +120,40 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
     Emitter<FeedState> emit,
   ) async {
     add(FeedLoadRequested());
+  }
+
+  Future<void> _onLoadMore(
+    FeedLoadMoreRequested event,
+    Emitter<FeedState> emit,
+  ) async {
+    if (state.isLoadingMore || state.hasReachedEnd || state.isOffline) {
+      return;
+    }
+    emit(state.copyWith(isLoadingMore: true));
+
+    final uid = _authService.currentUser!.uid;
+    final followingIds = await _feedRepository.getFollowingIds(uid);
+    final allIds = [...followingIds, uid];
+    final nextLimit = state.posts.length + AppConstants.feedPageSize;
+    final posts = await _feedRepository.getFeedPosts(allIds, nextLimit);
+
+    final likedIds = <String>{};
+    for (final post in posts) {
+      final liked = await _postRepository.isPostLiked(post.postId, uid);
+      if (liked) likedIds.add(post.postId);
+    }
+
+    _cacheService.cacheLikedPostIds(likedIds);
+
+    emit(
+      state.copyWith(
+        status: FeedStatus.loaded,
+        posts: posts,
+        likedPostIds: likedIds,
+        isLoadingMore: false,
+        hasReachedEnd: posts.length < nextLimit,
+      ),
+    );
   }
 
   Future<void> _onConnectivityChanged(

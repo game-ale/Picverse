@@ -152,7 +152,11 @@ void main() {
             bloc.add(const PostCommentsLoadRequested(postId: 'post1')),
         expect: () => [
           const PostState(status: PostStatus.loading),
-          PostState(status: PostStatus.success, comments: tComments),
+          PostState(
+            status: PostStatus.success,
+            comments: tComments,
+            hasReachedEnd: true,
+          ),
         ],
       );
 
@@ -201,7 +205,11 @@ void main() {
         expect: () => [
           // PostCommentsLoadRequested is dispatched, emitting loading + success
           const PostState(status: PostStatus.loading),
-          PostState(status: PostStatus.success, comments: tComments),
+          PostState(
+            status: PostStatus.success,
+            comments: tComments,
+            hasReachedEnd: true,
+          ),
         ],
       );
 
@@ -242,7 +250,11 @@ void main() {
         expect: () => [
           // PostCommentsLoadRequested triggers loading + success
           const PostState(status: PostStatus.loading),
-          const PostState(status: PostStatus.success, comments: []),
+          const PostState(
+            status: PostStatus.success,
+            comments: [],
+            hasReachedEnd: true,
+          ),
         ],
       );
     });

@@ -13,6 +13,12 @@ class AdminState extends Equatable {
   final List<PostModel> posts;
   final List<ReportModel> reports;
   final String? errorMessage;
+  final bool usersHasReachedEnd;
+  final bool postsHasReachedEnd;
+  final bool reportsHasReachedEnd;
+  final bool usersLoadingMore;
+  final bool postsLoadingMore;
+  final bool reportsLoadingMore;
 
   const AdminState({
     this.status = AdminStatus.initial,
@@ -21,6 +27,12 @@ class AdminState extends Equatable {
     this.posts = const [],
     this.reports = const [],
     this.errorMessage,
+    this.usersHasReachedEnd = false,
+    this.postsHasReachedEnd = false,
+    this.reportsHasReachedEnd = false,
+    this.usersLoadingMore = false,
+    this.postsLoadingMore = false,
+    this.reportsLoadingMore = false,
   });
 
   AdminState copyWith({
@@ -30,6 +42,12 @@ class AdminState extends Equatable {
     List<PostModel>? posts,
     List<ReportModel>? reports,
     String? errorMessage,
+    bool? usersHasReachedEnd,
+    bool? postsHasReachedEnd,
+    bool? reportsHasReachedEnd,
+    bool? usersLoadingMore,
+    bool? postsLoadingMore,
+    bool? reportsLoadingMore,
   }) {
     return AdminState(
       status: status ?? this.status,
@@ -38,9 +56,28 @@ class AdminState extends Equatable {
       posts: posts ?? this.posts,
       reports: reports ?? this.reports,
       errorMessage: errorMessage,
+      usersHasReachedEnd: usersHasReachedEnd ?? this.usersHasReachedEnd,
+      postsHasReachedEnd: postsHasReachedEnd ?? this.postsHasReachedEnd,
+      reportsHasReachedEnd: reportsHasReachedEnd ?? this.reportsHasReachedEnd,
+      usersLoadingMore: usersLoadingMore ?? this.usersLoadingMore,
+      postsLoadingMore: postsLoadingMore ?? this.postsLoadingMore,
+      reportsLoadingMore: reportsLoadingMore ?? this.reportsLoadingMore,
     );
   }
 
   @override
-  List<Object?> get props => [status, stats, users, posts, reports, errorMessage];
+  List<Object?> get props => [
+    status,
+    stats,
+    users,
+    posts,
+    reports,
+    errorMessage,
+    usersHasReachedEnd,
+    postsHasReachedEnd,
+    reportsHasReachedEnd,
+    usersLoadingMore,
+    postsLoadingMore,
+    reportsLoadingMore,
+  ];
 }

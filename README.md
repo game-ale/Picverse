@@ -1,16 +1,26 @@
-# picverse
+# Picverse
 
-A new Flutter project.
+Picverse is a Flutter social media app with authentication, social feeds, posts, comments, likes, follows, notifications, chat, admin moderation, filtering, and localization.
 
-## Getting Started
+For full project documentation, see [`PROJECT_DOCUMENTATION.md`](PROJECT_DOCUMENTATION.md).
 
-This project is a starting point for a Flutter application.
+## Quick start
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter run
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Verification
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter analyze
+flutter test
+```
+
+## Setup notes
+
+- Firebase is the primary backend.
+- `SETUP_GUIDE.md` contains the older setup notes and should be treated as legacy until it is refreshed.
+- The app currently supports English, Afaan Oromo, and Amharic.
+

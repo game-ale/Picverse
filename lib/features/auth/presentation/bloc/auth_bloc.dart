@@ -23,12 +23,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final user = _authRepository.currentUser;
-    if (user != null) {
+    try {
+      final user = _authRepository.currentUser;
+      if (user == null) {
+        emit(const AuthState(status: AuthStatus.unauthenticated));
+        return;
+      }
+
       final profile = await _authRepository.getCurrentUserProfile();
-      emit(state.copyWith(status: AuthStatus.authenticated, user: profile));
-    } else {
-      emit(state.copyWith(status: AuthStatus.unauthenticated));
+      if (profile == null) {
+        await _authRepository.signOut();
+        emit(const AuthState(status: AuthStatus.unauthenticated));
+        return;
+      }
+
+      emit(AuthState(status: AuthStatus.authenticated, user: profile));
+    } catch (_) {
+      try {
+        await _authRepository.signOut();
+      } catch (_) {}
+      emit(const AuthState(status: AuthStatus.unauthenticated));
     }
   }
 

@@ -11,6 +11,9 @@ import 'package:picverse/features/auth/presentation/pages/reset_password_screen.
 import 'package:picverse/features/auth/presentation/pages/splash_screen.dart';
 import 'package:picverse/features/feed/presentation/pages/home_screen.dart';
 import 'package:picverse/features/home/presentation/pages/main_screen.dart';
+import 'package:picverse/features/chat/presentation/pages/chat_list_screen.dart';
+import 'package:picverse/features/chat/presentation/pages/chat_room_screen.dart';
+import 'package:picverse/features/chat/presentation/pages/create_group_chat_screen.dart';
 import 'package:picverse/features/notification/presentation/pages/notifications_screen.dart';
 import 'package:picverse/features/post/presentation/pages/comments_screen.dart';
 import 'package:picverse/features/post/presentation/pages/create_post_screen.dart';
@@ -33,14 +36,18 @@ CustomTransitionPage<void> _fadeTransition(Widget child, GoRouterState state) {
 }
 
 CustomTransitionPage<void> _slideUpTransition(
-    Widget child, GoRouterState state) {
+  Widget child,
+  GoRouterState state,
+) {
   return CustomTransitionPage(
     key: state.pageKey,
     child: child,
     transitionDuration: const Duration(milliseconds: 300),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final tween = Tween(begin: const Offset(0, 0.15), end: Offset.zero)
-          .chain(CurveTween(curve: Curves.easeOutCubic));
+      final tween = Tween(
+        begin: const Offset(0, 0.15),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeOutCubic));
       return SlideTransition(
         position: animation.drive(tween),
         child: FadeTransition(opacity: animation, child: child),
@@ -50,14 +57,18 @@ CustomTransitionPage<void> _slideUpTransition(
 }
 
 CustomTransitionPage<void> _slideRightTransition(
-    Widget child, GoRouterState state) {
+  Widget child,
+  GoRouterState state,
+) {
   return CustomTransitionPage(
     key: state.pageKey,
     child: child,
     transitionDuration: const Duration(milliseconds: 300),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final tween = Tween(begin: const Offset(0.25, 0), end: Offset.zero)
-          .chain(CurveTween(curve: Curves.easeOutCubic));
+      final tween = Tween(
+        begin: const Offset(0.25, 0),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeOutCubic));
       return SlideTransition(
         position: animation.drive(tween),
         child: FadeTransition(opacity: animation, child: child),
@@ -73,15 +84,24 @@ class AppRouter {
       refreshListenable: GoRouterRefreshStream(authBloc.stream),
       redirect: (context, state) {
         final authState = authBloc.state;
+        final currentPath = state.uri.path;
+        final isOnSplash = currentPath == '/splash';
         final isOnAuth =
-            state.matchedLocation == '/login' ||
-            state.matchedLocation == '/register' ||
-            state.matchedLocation == '/reset-password' ||
-            state.matchedLocation == '/splash';
+            currentPath == '/login' ||
+            currentPath == '/register' ||
+            currentPath == '/reset-password';
+        final isUserShellPath =
+            currentPath == '/' ||
+            currentPath == '/search' ||
+            currentPath == '/create-post' ||
+            currentPath == '/notifications' ||
+            currentPath == '/profile';
+        final isAdminShellPath = currentPath == '/admin';
+        final isAdmin = authState.user?.role == 'admin';
 
         if (authState.status == AuthStatus.initial ||
             authState.status == AuthStatus.loading) {
-          return state.matchedLocation == '/splash' ? null : '/splash';
+          return isOnSplash ? null : '/splash';
         }
 
         if (authState.status == AuthStatus.unauthenticated ||
@@ -89,8 +109,16 @@ class AppRouter {
           return isOnAuth ? null : '/login';
         }
 
-        if (authState.status == AuthStatus.authenticated && isOnAuth) {
-          return '/';
+        if (authState.status == AuthStatus.authenticated) {
+          if (isOnSplash || isOnAuth) {
+            return isAdmin ? '/admin' : '/';
+          }
+          if (isAdmin && isUserShellPath) {
+            return '/admin';
+          }
+          if (!isAdmin && isAdminShellPath) {
+            return '/';
+          }
         }
 
         return null;
@@ -122,8 +150,7 @@ class AppRouter {
           path: '/comments/:postId',
           pageBuilder: (context, state) {
             final postId = state.pathParameters['postId']!;
-            return _slideUpTransition(
-                CommentsScreen(postId: postId), state);
+            return _slideUpTransition(CommentsScreen(postId: postId), state);
           },
         ),
         GoRoute(
@@ -137,21 +164,49 @@ class AppRouter {
             final userId = state.pathParameters['userId']!;
             final tab = state.uri.queryParameters['tab'] ?? 'followers';
             return _slideRightTransition(
-                FollowersListScreen(userId: userId, initialTab: tab), state);
+              FollowersListScreen(userId: userId, initialTab: tab),
+              state,
+            );
           },
         ),
         GoRoute(
           path: '/profile/:userId',
           pageBuilder: (context, state) {
             final userId = state.pathParameters['userId']!;
-            return _slideRightTransition(
-                ProfileScreen(userId: userId), state);
+            return _slideRightTransition(ProfileScreen(userId: userId), state);
           },
         ),
         GoRoute(
           path: '/admin',
           pageBuilder: (context, state) =>
               _slideRightTransition(const AdminDashboardScreen(), state),
+        ),
+        GoRoute(
+          path: '/chats',
+          pageBuilder: (context, state) =>
+              _slideRightTransition(const ChatListScreen(), state),
+        ),
+        GoRoute(
+          path: '/chats/create-group',
+          pageBuilder: (context, state) =>
+              _slideRightTransition(const CreateGroupChatScreen(), state),
+        ),
+        GoRoute(
+          path: '/chats/open/:userId',
+          pageBuilder: (context, state) {
+            final userId = state.pathParameters['userId']!;
+            return _slideRightTransition(
+              ChatRoomScreen(otherUserId: userId),
+              state,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/chats/:roomId',
+          pageBuilder: (context, state) {
+            final roomId = state.pathParameters['roomId']!;
+            return _slideRightTransition(ChatRoomScreen(roomId: roomId), state);
+          },
         ),
         // Main shell with bottom navigation
         ShellRoute(

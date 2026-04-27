@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 import 'package:picverse/core/widgets/offline_banner.dart';
 import 'package:picverse/core/widgets/shimmer_loading.dart';
 import 'package:picverse/features/feed/presentation/bloc/feed_bloc.dart';
 import 'package:picverse/features/feed/presentation/bloc/feed_event.dart';
 import 'package:picverse/features/feed/presentation/bloc/feed_state.dart';
+import 'package:picverse/features/post/data/models/post_model.dart';
 import 'package:picverse/features/post/presentation/widgets/post_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,15 +19,35 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  FeedFilter _filter = FeedFilter.all;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     context.read<FeedBloc>().add(FeedLoadRequested());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 400) {
+      context.read<FeedBloc>().add(FeedLoadMoreRequested());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,6 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline),
+            onPressed: () => context.push('/chats'),
+          ),
           IconButton(
             icon: const Icon(Icons.favorite_border),
             onPressed: () => context.go('/notifications'),
@@ -101,15 +127,68 @@ class _HomeScreenState extends State<HomeScreen> {
           return Column(
             children: [
               if (state.isOffline) const OfflineBanner(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.text('filterBy'),
+                    style: TextStyle(
+                      color: AppColors.grey500,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _FeedFilterChip(
+                      label: l10n.text('all'),
+                      selected: _filter == FeedFilter.all,
+                      onSelected: () => setState(() => _filter = FeedFilter.all),
+                    ),
+                    _FeedFilterChip(
+                      label: l10n.text('withCaption'),
+                      selected: _filter == FeedFilter.withCaption,
+                      onSelected: () =>
+                          setState(() => _filter = FeedFilter.withCaption),
+                    ),
+                    _FeedFilterChip(
+                      label: l10n.text('withImage'),
+                      selected: _filter == FeedFilter.withImage,
+                      onSelected: () =>
+                          setState(() => _filter = FeedFilter.withImage),
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
                     context.read<FeedBloc>().add(FeedRefreshRequested());
                   },
                   child: ListView.builder(
-                    itemCount: state.posts.length,
+                    controller: _scrollController,
+                    itemCount: _filteredPosts(state).length +
+                        (state.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final post = state.posts[index];
+                      final posts = _filteredPosts(state);
+                      if (index >= posts.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: state.hasReachedEnd
+                                ? const SizedBox.shrink()
+                                : const CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      final post = posts[index];
                       final isLiked = state.likedPostIds.contains(post.postId);
                       return _StaggeredFadeSlide(
                         index: index,
@@ -129,6 +208,48 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  List<PostModel> _filteredPosts(FeedState state) {
+    switch (_filter) {
+      case FeedFilter.all:
+        return state.posts;
+      case FeedFilter.withCaption:
+        return state.posts.where((post) => post.caption.trim().isNotEmpty).toList();
+      case FeedFilter.withImage:
+        return state.posts.where((post) => post.imageUrl.trim().isNotEmpty).toList();
+    }
+  }
+}
+
+enum FeedFilter { all, withCaption, withImage }
+
+class _FeedFilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _FeedFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      selectedColor: AppColors.primaryPurple.withValues(alpha: 0.18),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primaryPurple : AppColors.grey600,
+        fontWeight: FontWeight.w600,
+      ),
+      side: BorderSide(
+        color: selected ? AppColors.primaryPurple : AppColors.grey200,
       ),
     );
   }

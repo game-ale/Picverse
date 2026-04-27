@@ -39,6 +39,21 @@ class ProfileUpdateImageRequested extends ProfileEvent {
   List<Object?> get props => [imagePath];
 }
 
+class ProfileSaveRequested extends ProfileEvent {
+  final String? username;
+  final String? bio;
+  final String? imagePath;
+
+  const ProfileSaveRequested({
+    this.username,
+    this.bio,
+    this.imagePath,
+  });
+
+  @override
+  List<Object?> get props => [username, bio, imagePath];
+}
+
 class ProfileFollowToggled extends ProfileEvent {
   final String targetUserId;
   const ProfileFollowToggled({required this.targetUserId});

@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:uuid/uuid.dart';
 
 import 'package:picverse/features/post/domain/repositories/post_repository.dart';
+import 'package:picverse/core/constants/app_constants.dart';
 import 'package:picverse/core/services/connectivity_service.dart';
 import 'package:picverse/core/services/firestore_service.dart';
 import 'package:picverse/core/services/storage_service.dart';
 import 'package:picverse/core/local/local_cache_service.dart';
 import 'package:picverse/core/local/offline_queue_service.dart';
+import 'package:picverse/features/notification/domain/repositories/notification_repository.dart';
 import 'package:picverse/features/post/data/models/comment_model.dart';
 import 'package:picverse/features/post/data/models/post_model.dart';
 
@@ -17,6 +19,7 @@ class PostRepositoryImpl implements PostRepository {
   final LocalCacheService _cacheService;
   final OfflineQueueService _offlineQueue;
   final ConnectivityService _connectivityService;
+  final NotificationRepository _notificationRepository;
   final _uuid = const Uuid();
 
   PostRepositoryImpl({
@@ -25,11 +28,13 @@ class PostRepositoryImpl implements PostRepository {
     required LocalCacheService cacheService,
     required OfflineQueueService offlineQueue,
     required ConnectivityService connectivityService,
+    required NotificationRepository notificationRepository,
   }) : _firestoreService = firestoreService,
-       _storageService = storageService,
-       _cacheService = cacheService,
-       _offlineQueue = offlineQueue,
-       _connectivityService = connectivityService;
+        _storageService = storageService,
+        _cacheService = cacheService,
+        _offlineQueue = offlineQueue,
+        _connectivityService = connectivityService,
+        _notificationRepository = notificationRepository;
 
   @override
   Future<PostModel> createPost({
@@ -79,8 +84,11 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
-  Future<List<PostModel>> getUserPosts(String userId) {
-    return _firestoreService.getUserPosts(userId);
+  Future<List<PostModel>> getUserPosts(
+    String userId, [
+    int limit = AppConstants.feedPageSize,
+  ]) {
+    return _firestoreService.getUserPosts(userId, limit: limit);
   }
 
   // ─── Likes ───
@@ -88,7 +96,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<void> likePost(String postId, String userId) async {
     if (_connectivityService.isOnline) {
-      await _firestoreService.likePost(postId, userId);
+      await _performLike(postId, userId);
     } else {
       await _offlineQueue.enqueue(
         action: 'like',
@@ -102,7 +110,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<void> unlikePost(String postId, String userId) async {
     if (_connectivityService.isOnline) {
-      await _firestoreService.unlikePost(postId, userId);
+      await _performUnlike(postId, userId);
     } else {
       await _offlineQueue.enqueue(
         action: 'unlike',
@@ -131,9 +139,9 @@ class PostRepositoryImpl implements PostRepository {
       final postId = item['postId'] as String;
       final userId = item['userId'] as String;
       if (action == 'like') {
-        await _firestoreService.likePost(postId, userId);
+        await _performLike(postId, userId);
       } else {
-        await _firestoreService.unlikePost(postId, userId);
+        await _performUnlike(postId, userId);
       }
     }
   }
@@ -156,6 +164,7 @@ class PostRepositoryImpl implements PostRepository {
       createdAt: DateTime.now(),
     );
     final commentId = await _firestoreService.addComment(data.toFirestore());
+    await _sendCommentNotification(postId: postId, actorId: userId);
     return CommentModel(
       commentId: commentId,
       postId: postId,
@@ -172,7 +181,54 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
-  Future<List<CommentModel>> getComments(String postId) {
-    return _firestoreService.getComments(postId);
+  Future<List<CommentModel>> getComments(
+    String postId, [
+    int limit = AppConstants.feedPageSize,
+  ]) {
+    return _firestoreService.getComments(postId, limit: limit);
+  }
+
+  Future<void> _performLike(String postId, String userId) async {
+    await _firestoreService.likePost(postId, userId);
+    await _sendPostOwnerNotification(
+      postId: postId,
+      actorId: userId,
+      type: 'like',
+    );
+  }
+
+  Future<void> _performUnlike(String postId, String userId) async {
+    await _firestoreService.unlikePost(postId, userId);
+  }
+
+  Future<void> _sendCommentNotification({
+    required String postId,
+    required String actorId,
+  }) async {
+    await _sendPostOwnerNotification(
+      postId: postId,
+      actorId: actorId,
+      type: 'comment',
+    );
+  }
+
+  Future<void> _sendPostOwnerNotification({
+    required String postId,
+    required String actorId,
+    required String type,
+  }) async {
+    final post = await _firestoreService.getPost(postId);
+    final actor = await _firestoreService.getUser(actorId);
+    if (post == null || actor == null || post.userId == actorId) {
+      return;
+    }
+
+    await _notificationRepository.sendNotification(
+      userId: post.userId,
+      type: type,
+      actorId: actorId,
+      actorUsername: actor.username,
+      postId: postId,
+    );
   }
 }

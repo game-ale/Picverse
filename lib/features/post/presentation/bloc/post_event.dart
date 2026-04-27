@@ -35,6 +35,15 @@ class PostCommentsLoadRequested extends PostEvent {
   List<Object?> get props => [postId];
 }
 
+class PostCommentsLoadMoreRequested extends PostEvent {
+  final String postId;
+
+  const PostCommentsLoadMoreRequested({required this.postId});
+
+  @override
+  List<Object?> get props => [postId];
+}
+
 class PostCommentAdded extends PostEvent {
   final String postId;
   final String text;

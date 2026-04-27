@@ -46,8 +46,31 @@ class AdminReportsTab extends StatelessWidget {
 
         return ListView.builder(
           padding: const EdgeInsets.all(12),
-          itemCount: state.reports.length,
+          itemCount: state.reports.length +
+              (state.reportsLoadingMore ? 1 : 0) +
+              (state.reportsHasReachedEnd ? 0 : 1),
           itemBuilder: (context, index) {
+            if (index >= state.reports.length) {
+              if (state.reportsLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => context.read<AdminBloc>().add(
+                      AdminLoadMoreReports(),
+                    ),
+                    child: const Text('Load more reports'),
+                  ),
+                ),
+              );
+            }
+
             final report = state.reports[index];
             final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -114,9 +137,9 @@ class AdminReportsTab extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              context
-                                  .read<AdminBloc>()
-                                  .add(AdminDismissReport(report.reportId));
+                              context.read<AdminBloc>().add(
+                                AdminDismissReport(report.reportId),
+                              );
                             },
                             icon: const Icon(Icons.close, size: 18),
                             label: const Text('Dismiss'),
@@ -126,9 +149,9 @@ class AdminReportsTab extends StatelessWidget {
                         Expanded(
                           child: FilledButton.icon(
                             onPressed: () {
-                              context
-                                  .read<AdminBloc>()
-                                  .add(AdminResolveReport(report.reportId));
+                              context.read<AdminBloc>().add(
+                                AdminResolveReport(report.reportId),
+                              );
                             },
                             icon: const Icon(Icons.check, size: 18),
                             label: const Text('Resolve'),

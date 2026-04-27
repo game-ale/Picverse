@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:picverse/core/constants/app_constants.dart';
 import 'package:picverse/features/auth/domain/repositories/auth_repository.dart';
 import 'package:picverse/features/post/domain/repositories/post_repository.dart';
 import 'package:picverse/core/services/auth_service.dart';
@@ -24,6 +25,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     on<PostCreateRequested>(_onCreate);
     on<PostDeleteRequested>(_onDelete);
     on<PostCommentsLoadRequested>(_onLoadComments);
+    on<PostCommentsLoadMoreRequested>(_onLoadMoreComments);
     on<PostCommentAdded>(_onAddComment);
     on<PostCommentDeleted>(_onDeleteComment);
   }
@@ -78,13 +80,52 @@ class PostBloc extends Bloc<PostEvent, PostState> {
   ) async {
     emit(state.copyWith(status: PostStatus.loading));
     try {
-      final comments = await _postRepository.getComments(event.postId);
-      emit(state.copyWith(status: PostStatus.success, comments: comments));
+      final comments = await _postRepository.getComments(
+        event.postId,
+      );
+      emit(
+        state.copyWith(
+          status: PostStatus.success,
+          comments: comments,
+          hasReachedEnd: comments.length < AppConstants.feedPageSize,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
           status: PostStatus.error,
           errorMessage: 'Failed to load comments',
+        ),
+      );
+    }
+  }
+
+  Future<void> _onLoadMoreComments(
+    PostCommentsLoadMoreRequested event,
+    Emitter<PostState> emit,
+  ) async {
+    if (state.isLoadingMore || state.hasReachedEnd) return;
+
+    emit(state.copyWith(isLoadingMore: true));
+    try {
+      final nextLimit = state.comments.length + AppConstants.feedPageSize;
+      final comments = await _postRepository.getComments(
+        event.postId,
+        nextLimit,
+      );
+      emit(
+        state.copyWith(
+          status: PostStatus.success,
+          comments: comments,
+          isLoadingMore: false,
+          hasReachedEnd: comments.length < nextLimit,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          errorMessage: 'Failed to load more comments',
         ),
       );
     }

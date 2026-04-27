@@ -9,7 +9,7 @@ class AppConstants {
   static const int maxCaptionLength = 2200;
   static const double imageCompressionQuality = 70;
 
-  // Supabase storage buckets
+  // Firebase Storage folders
   static const String postImagesBucket = 'post-images';
   static const String profileImagesBucket = 'profile-images';
 
@@ -21,4 +21,6 @@ class AppConstants {
   static const String followsCollection = 'follows';
   static const String notificationsCollection = 'notifications';
   static const String reportsCollection = 'reports';
+  static const String chatRoomsCollection = 'chatRooms';
+  static const String chatMessagesCollection = 'chatMessages';
 }

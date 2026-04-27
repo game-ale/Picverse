@@ -19,10 +19,12 @@ class CommentsScreen extends StatefulWidget {
 
 class _CommentsScreenState extends State<CommentsScreen> {
   final _commentController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     context.read<PostBloc>().add(
       PostCommentsLoadRequested(postId: widget.postId),
     );
@@ -30,8 +32,20 @@ class _CommentsScreenState extends State<CommentsScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      context.read<PostBloc>().add(
+        PostCommentsLoadMoreRequested(postId: widget.postId),
+      );
+    }
   }
 
   void _onSend() {
@@ -70,9 +84,21 @@ class _CommentsScreenState extends State<CommentsScreen> {
                 }
 
                 return ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: state.comments.length,
+                  itemCount: state.comments.length +
+                      (state.isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index >= state.comments.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: state.hasReachedEnd
+                              ? const SizedBox.shrink()
+                              : const CircularProgressIndicator(),
+                        ),
+                      );
+                    }
                     final comment = state.comments[index];
                     return CommentTile(
                       comment: comment,

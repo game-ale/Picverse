@@ -13,7 +13,7 @@ abstract class PostRepository {
   });
   Future<void> deletePost(String postId, String userId);
   Future<PostModel?> getPost(String postId);
-  Future<List<PostModel>> getUserPosts(String userId);
+  Future<List<PostModel>> getUserPosts(String userId, [int limit]);
   Future<void> likePost(String postId, String userId);
   Future<void> unlikePost(String postId, String userId);
   Future<bool> isPostLiked(String postId, String userId);
@@ -24,6 +24,6 @@ abstract class PostRepository {
     required String text,
   });
   Future<void> deleteComment(String commentId, String postId);
-  Future<List<CommentModel>> getComments(String postId);
+  Future<List<CommentModel>> getComments(String postId, [int limit]);
   Future<void> syncOfflineQueue();
 }

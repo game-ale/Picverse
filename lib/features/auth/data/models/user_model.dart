@@ -14,6 +14,7 @@ class UserModel extends UserEntity {
     super.postsCount,
     super.role,
     super.status,
+    super.fcmTokens,
     required super.createdAt,
   });
 
@@ -30,6 +31,11 @@ class UserModel extends UserEntity {
       postsCount: data['postsCount'] ?? 0,
       role: data['role'] ?? 'user',
       status: data['status'] ?? 'active',
+      fcmTokens:
+          (data['fcmTokens'] as List<dynamic>?)
+                  ?.whereType<String>()
+                  .toList() ??
+              const [],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -45,6 +51,7 @@ class UserModel extends UserEntity {
       'postsCount': postsCount,
       'role': role,
       'status': status,
+      'fcmTokens': fcmTokens,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -60,6 +67,7 @@ class UserModel extends UserEntity {
     int? postsCount,
     String? role,
     String? status,
+    List<String>? fcmTokens,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -73,6 +81,7 @@ class UserModel extends UserEntity {
       postsCount: postsCount ?? this.postsCount,
       role: role ?? this.role,
       status: status ?? this.status,
+      fcmTokens: fcmTokens ?? this.fcmTokens,
       createdAt: createdAt ?? this.createdAt,
     );
   }

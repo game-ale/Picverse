@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 import 'package:picverse/core/utils/validators.dart';
 import 'package:picverse/core/widgets/primary_button.dart';
 import 'package:picverse/features/auth/presentation/bloc/auth_bloc.dart';
@@ -38,6 +39,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: AuthGradientBackground(
         child: SafeArea(
@@ -46,9 +48,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               if (state.status == AuthStatus.resetPasswordSent) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text(
-                      'Password reset email sent! Check your inbox.',
-                    ),
+                    content: Text(l10n.text('passwordResetSent')),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -124,8 +124,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                     const SizedBox(height: 24),
 
-                    const Text(
-                      'Reset Password',
+                    Text(
+                      l10n.text('forgotPassword'),
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
@@ -159,7 +159,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           children: [
                             AuthTextField(
                               controller: _emailController,
-                              hintText: 'Email address',
+                              hintText: l10n.text('emailAddress'),
                               prefixIcon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: Validators.email,
@@ -168,7 +168,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, state) {
                                 return PrimaryButton(
-                                  text: 'Send Reset Link',
+                                  text: l10n.text('sendResetLink'),
                                   isLoading: state.status == AuthStatus.loading,
                                   onPressed: _onReset,
                                 );
@@ -185,7 +185,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     GestureDetector(
                       onTap: () => context.pop(),
                       child: Text(
-                        'Back to Sign In',
+                        l10n.text('backToSignIn'),
                         style: TextStyle(
                           color: AppColors.primaryLight,
                           fontSize: 14,

@@ -81,51 +81,31 @@ void main() {
 
     group('NotificationMarkReadRequested', () {
       blocTest<NotificationBloc, NotificationState>(
-        'marks notification as read and reloads',
+        'marks notification as read without reloading',
         setUp: () {
           when(
             () => mockNotifRepo.markAsRead('notif1'),
           ).thenAnswer((_) async {});
-          when(() => mockNotifRepo.getNotifications('user1')).thenAnswer(
-            (_) async => [
-              createTestNotification(isRead: true),
-              createTestNotification(notificationId: 'notif2', isRead: true),
-            ],
-          );
         },
         build: () => notifBloc,
         act: (bloc) => bloc.add(
           const NotificationMarkReadRequested(notificationId: 'notif1'),
         ),
-        expect: () => [
-          // Reload triggers loading + loaded
-          const NotificationState(status: NotificationStatus.loading),
-          isA<NotificationState>()
-              .having((s) => s.status, 'status', NotificationStatus.loaded)
-              .having((s) => s.unreadCount, 'unread', 0),
-        ],
+        expect: () => [],
       );
     });
 
     group('NotificationMarkAllReadRequested', () {
       blocTest<NotificationBloc, NotificationState>(
-        'marks all as read and reloads',
+        'marks all as read without reloading',
         setUp: () {
           when(
             () => mockNotifRepo.markAllAsRead('user1'),
           ).thenAnswer((_) async {});
-          when(
-            () => mockNotifRepo.getNotifications('user1'),
-          ).thenAnswer((_) async => [createTestNotification(isRead: true)]);
         },
         build: () => notifBloc,
         act: (bloc) => bloc.add(NotificationMarkAllReadRequested()),
-        expect: () => [
-          const NotificationState(status: NotificationStatus.loading),
-          isA<NotificationState>()
-              .having((s) => s.status, 'status', NotificationStatus.loaded)
-              .having((s) => s.unreadCount, 'unread', 0),
-        ],
+        expect: () => [],
       );
     });
   });

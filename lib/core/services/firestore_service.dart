@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:picverse/core/constants/app_constants.dart';
 import 'package:picverse/features/post/data/models/comment_model.dart';
+import 'package:picverse/features/chat/data/models/chat_message_model.dart';
+import 'package:picverse/features/chat/data/models/chat_room_model.dart';
 import 'package:picverse/features/notification/data/models/notification_model.dart';
 import 'package:picverse/features/post/data/models/post_model.dart';
 import 'package:picverse/features/admin/data/models/report_model.dart';
@@ -23,6 +25,10 @@ class FirestoreService {
       _firestore.collection(AppConstants.followsCollection);
   CollectionReference get _notificationsRef =>
       _firestore.collection(AppConstants.notificationsCollection);
+  CollectionReference get _chatRoomsRef =>
+      _firestore.collection(AppConstants.chatRoomsCollection);
+  CollectionReference get _chatMessagesRef =>
+      _firestore.collection(AppConstants.chatMessagesCollection);
 
   // ─── Users ───
 
@@ -34,6 +40,18 @@ class FirestoreService {
     final doc = await _usersRef.doc(userId).get();
     if (!doc.exists) return null;
     return UserModel.fromFirestore(doc);
+  }
+
+  Future<void> registerPushToken(String userId, String token) async {
+    await _usersRef.doc(userId).set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> removePushToken(String userId, String token) async {
+    await _usersRef.doc(userId).set({
+      'fcmTokens': FieldValue.arrayRemove([token]),
+    }, SetOptions(merge: true));
   }
 
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
@@ -241,6 +259,166 @@ class FirestoreService {
     return users;
   }
 
+  Future<List<UserModel>> getUsersByIds(List<String> userIds) async {
+    if (userIds.isEmpty) return [];
+    final uniqueIds = userIds.toSet().toList();
+    final users = <UserModel>[];
+    for (final id in uniqueIds) {
+      final user = await getUser(id);
+      if (user != null) users.add(user);
+    }
+    return users;
+  }
+
+  // ─── Chat ───
+
+  Future<String> getOrCreateDirectChatRoom({
+    required String currentUserId,
+    required String otherUserId,
+  }) async {
+    final roomId = ChatRoomModel.directRoomId(currentUserId, otherUserId);
+    final roomRef = _chatRoomsRef.doc(roomId);
+    final existing = await roomRef.get();
+    if (existing.exists) {
+      return roomId;
+    }
+
+    final users = await getUsersByIds([currentUserId, otherUserId]);
+    final currentUser = users.firstWhere(
+      (user) => user.userId == currentUserId,
+      orElse: () => throw StateError('Current user profile not found'),
+    );
+    final otherUser = users.firstWhere(
+      (user) => user.userId == otherUserId,
+      orElse: () => throw StateError('Other user profile not found'),
+    );
+
+    await roomRef.set(
+      ChatRoomModel.createDirectPayload(
+        currentUserId: currentUser.userId,
+        currentUsername: currentUser.username,
+        currentPhotoUrl: currentUser.profileImage,
+        otherUserId: otherUser.userId,
+        otherUsername: otherUser.username,
+        otherPhotoUrl: otherUser.profileImage,
+      ),
+    );
+    return roomId;
+  }
+
+  Future<String> createGroupChat({
+    required String creatorId,
+    required String groupName,
+    required List<String> participantIds,
+  }) async {
+    final uniqueIds = {...participantIds, creatorId}.toList();
+    if (uniqueIds.length < 3) {
+      throw StateError('A group chat needs at least two participants besides the creator');
+    }
+    final users = await getUsersByIds(uniqueIds);
+    if (users.length != uniqueIds.length) {
+      throw StateError('One or more participant profiles are missing');
+    }
+    final roomRef = _chatRoomsRef.doc();
+    await roomRef.set(
+      ChatRoomModel.createGroupPayload(
+        participantIds: uniqueIds,
+        participantUsernames: uniqueIds.map((id) {
+          return users.firstWhere((user) => user.userId == id).username;
+        }).toList(),
+        participantProfileImages: uniqueIds.map((id) {
+          return users.firstWhere((user) => user.userId == id).profileImage;
+        }).toList(),
+        creatorId: creatorId,
+        groupName: groupName,
+      ),
+    );
+    return roomRef.id;
+  }
+
+  Stream<List<ChatRoomModel>> watchChatRooms(String userId) {
+    return _chatRoomsRef
+        .where('participantIds', arrayContains: userId)
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs.map((doc) => ChatRoomModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Stream<ChatRoomModel?> watchChatRoom(String roomId) {
+    return _chatRoomsRef.doc(roomId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return ChatRoomModel.fromFirestore(doc);
+    });
+  }
+
+  Stream<List<ChatMessageModel>> watchChatMessages(String roomId) {
+    return _chatMessagesRef
+        .where('roomId', isEqualTo: roomId)
+        .orderBy('createdAt', descending: false)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => ChatMessageModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  Future<void> sendChatMessage({
+    required String roomId,
+    required String senderId,
+    required String text,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      throw StateError('Message cannot be empty');
+    }
+
+    final sender = await getUser(senderId);
+    if (sender == null) {
+      throw StateError('Sender profile not found');
+    }
+
+    final roomRef = _chatRoomsRef.doc(roomId);
+    final messageRef = _chatMessagesRef.doc();
+    final room = await roomRef.get();
+    if (!room.exists) {
+      throw StateError('Chat room not found');
+    }
+    final participants = List<String>.from((room.data() as Map<String, dynamic>?)?['participantIds'] ?? const []);
+    final unreadCounts = <String, int>{};
+    for (final participant in participants) {
+      unreadCounts[participant] = participant == senderId ? 0 : 1;
+    }
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.set(messageRef, {
+        'roomId': roomId,
+        'senderId': senderId,
+        'senderUsername': sender.username,
+        'text': trimmed,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      transaction.update(roomRef, {
+        'lastMessage': trimmed,
+        'lastMessageAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'unreadCounts': unreadCounts,
+      });
+    });
+  }
+
+  Future<void> markChatRoomRead({
+    required String roomId,
+    required String userId,
+  }) async {
+    await _chatRoomsRef.doc(roomId).set({
+      'unreadCounts.$userId': 0,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   // ─── Notifications ───
 
   Future<void> createNotification(Map<String, dynamic> data) async {
@@ -257,6 +435,14 @@ class FirestoreService {
         .limit(limit)
         .get();
     return snap.docs.map((d) => NotificationModel.fromFirestore(d)).toList();
+  }
+
+  Stream<List<NotificationModel>> watchNotifications(String userId) {
+    return _notificationsRef
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => NotificationModel.fromFirestore(d)).toList());
   }
 
   Future<void> markNotificationRead(String notificationId) async {

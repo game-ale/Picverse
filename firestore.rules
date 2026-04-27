@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /comments/{commentId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /likes/{likeId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if signedIn()
+        && (resource.data.followerId == request.auth.uid || isAdmin());
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.userId is string
+        && request.resource.data.type is string;
+      allow update, delete: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if signedIn() && request.resource.data.reportedBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /chatRooms/{roomId} {
+      allow read: if signedIn()
+        && (resource.data.participantIds.hasAny([request.auth.uid]) || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.participantIds.hasAny([request.auth.uid]);
+      allow update: if signedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.participantIds.hasAny([request.auth.uid])
+            && request.resource.data.participantIds == resource.data.participantIds
+            && request.resource.data.participantUsernames == resource.data.participantUsernames
+            && request.resource.data.participantProfileImages == resource.data.participantProfileImages
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.isGroup == resource.data.isGroup
+            && request.resource.data.groupName == resource.data.groupName
+          )
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /chatMessages/{messageId} {
+      allow read: if signedIn()
+        && (
+          exists(/databases/$(database)/documents/chatRooms/$(resource.data.roomId))
+          && get(/databases/$(database)/documents/chatRooms/$(resource.data.roomId)).data.participantIds.hasAny([request.auth.uid])
+        || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && exists(/databases/$(database)/documents/chatRooms/$(request.resource.data.roomId))
+        && get(/databases/$(database)/documents/chatRooms/$(request.resource.data.roomId)).data.participantIds.hasAny([request.auth.uid]);
+      allow delete: if isAdmin();
+    }
+  }
+}

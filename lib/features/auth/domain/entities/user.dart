@@ -11,6 +11,7 @@ class UserEntity extends Equatable {
   final int postsCount;
   final String role;
   final String status;
+  final List<String> fcmTokens;
   final DateTime createdAt;
 
   const UserEntity({
@@ -24,6 +25,7 @@ class UserEntity extends Equatable {
     this.postsCount = 0,
     this.role = 'user',
     this.status = 'active',
+    this.fcmTokens = const [],
     required this.createdAt,
   });
 

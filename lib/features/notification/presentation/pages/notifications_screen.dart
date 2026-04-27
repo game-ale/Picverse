@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 import 'package:picverse/features/notification/domain/entities/notification.dart';
 import 'package:picverse/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:picverse/features/notification/presentation/bloc/notification_event.dart';
@@ -25,15 +26,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.text('notifications')),
         actions: [
           TextButton(
             onPressed: () => context.read<NotificationBloc>().add(
               NotificationMarkAllReadRequested(),
             ),
-            child: const Text('Mark all read'),
+            child: Text(l10n.text('markAllRead')),
           ),
         ],
       ),
@@ -56,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No notifications',
+                    l10n.text('noNotifications'),
                     style: TextStyle(color: AppColors.grey500, fontSize: 16),
                   ),
                 ],

@@ -5,6 +5,7 @@ import 'package:picverse/core/local/offline_queue_service.dart';
 import 'package:picverse/features/admin/data/repositories/admin_repository_impl.dart';
 import 'package:picverse/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:picverse/features/feed/data/repositories/feed_repository_impl.dart';
+import 'package:picverse/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:picverse/features/notification/data/repositories/notification_repository_impl.dart';
 import 'package:picverse/features/post/data/repositories/post_repository_impl.dart';
 import 'package:picverse/features/profile/data/repositories/profile_repository_impl.dart';
@@ -12,6 +13,7 @@ import 'package:picverse/features/search/data/repositories/search_repository_imp
 import 'package:picverse/features/admin/domain/repositories/admin_repository.dart';
 import 'package:picverse/features/auth/domain/repositories/auth_repository.dart';
 import 'package:picverse/features/feed/domain/repositories/feed_repository.dart';
+import 'package:picverse/features/chat/domain/repositories/chat_repository.dart';
 import 'package:picverse/features/notification/domain/repositories/notification_repository.dart';
 import 'package:picverse/features/post/domain/repositories/post_repository.dart';
 import 'package:picverse/features/profile/domain/repositories/profile_repository.dart';
@@ -27,6 +29,7 @@ import 'package:picverse/features/search/presentation/bloc/search_bloc.dart';
 import 'package:picverse/core/services/auth_service.dart';
 import 'package:picverse/core/services/connectivity_service.dart';
 import 'package:picverse/core/services/firestore_service.dart';
+import 'package:picverse/core/services/push_notification_service.dart';
 import 'package:picverse/core/services/storage_service.dart';
 
 class InjectionContainer {
@@ -37,12 +40,14 @@ class InjectionContainer {
   late final ConnectivityService connectivityService;
   late final LocalCacheService localCacheService;
   late final OfflineQueueService offlineQueueService;
+  late final PushNotificationService pushNotificationService;
 
   // Repositories (abstract types)
   late final AuthRepository authRepository;
   late final ProfileRepository profileRepository;
   late final PostRepository postRepository;
   late final FeedRepository feedRepository;
+  late final ChatRepository chatRepository;
   late final NotificationRepository notificationRepository;
   late final SearchRepository searchRepository;
   late final AdminRepository adminRepository;
@@ -56,10 +61,17 @@ class InjectionContainer {
     await connectivityService.init();
     localCacheService = LocalCacheService();
     offlineQueueService = OfflineQueueService();
+    pushNotificationService = PushNotificationService(
+      authService: authService,
+      firestoreService: firestoreService,
+    );
 
     // ─── Repositories (concrete → abstract) ───
     authRepository = AuthRepositoryImpl(
       authService: authService,
+      firestoreService: firestoreService,
+    );
+    notificationRepository = NotificationRepositoryImpl(
       firestoreService: firestoreService,
     );
     profileRepository = ProfileRepositoryImpl(
@@ -67,6 +79,7 @@ class InjectionContainer {
       storageService: storageService,
       cacheService: localCacheService,
       connectivityService: connectivityService,
+      notificationRepository: notificationRepository,
     );
     postRepository = PostRepositoryImpl(
       firestoreService: firestoreService,
@@ -74,15 +87,14 @@ class InjectionContainer {
       cacheService: localCacheService,
       offlineQueue: offlineQueueService,
       connectivityService: connectivityService,
+      notificationRepository: notificationRepository,
     );
     feedRepository = FeedRepositoryImpl(
       firestoreService: firestoreService,
       cacheService: localCacheService,
       connectivityService: connectivityService,
     );
-    notificationRepository = NotificationRepositoryImpl(
-      firestoreService: firestoreService,
-    );
+    chatRepository = ChatRepositoryImpl(firestoreService);
     searchRepository = SearchRepositoryImpl(firestoreService: firestoreService);
     adminRepository = AdminRepositoryImpl(firestoreService: firestoreService);
   }
@@ -92,6 +104,7 @@ class InjectionContainer {
     RepositoryProvider<AuthService>.value(value: authService),
     RepositoryProvider<FirestoreService>.value(value: firestoreService),
     RepositoryProvider<AdminRepository>.value(value: adminRepository),
+    RepositoryProvider<ChatRepository>.value(value: chatRepository),
   ];
 
   /// Build [BlocProvider] list for [MultiBlocProvider].

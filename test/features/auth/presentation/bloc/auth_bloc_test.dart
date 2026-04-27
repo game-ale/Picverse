@@ -53,6 +53,42 @@ void main() {
         act: (bloc) => bloc.add(AuthCheckRequested()),
         expect: () => [const AuthState(status: AuthStatus.unauthenticated)],
       );
+
+      blocTest<AuthBloc, AuthState>(
+        'emits [unauthenticated] and signs out when profile is missing',
+        setUp: () {
+          final mockUser = MockUser();
+          when(() => mockAuthRepository.currentUser).thenReturn(mockUser);
+          when(
+            () => mockAuthRepository.getCurrentUserProfile(),
+          ).thenAnswer((_) async => null);
+          when(() => mockAuthRepository.signOut()).thenAnswer((_) async {});
+        },
+        build: () => authBloc,
+        act: (bloc) => bloc.add(AuthCheckRequested()),
+        expect: () => [const AuthState(status: AuthStatus.unauthenticated)],
+        verify: (_) {
+          verify(() => mockAuthRepository.signOut()).called(1);
+        },
+      );
+
+      blocTest<AuthBloc, AuthState>(
+        'emits [unauthenticated] when auth check throws',
+        setUp: () {
+          final mockUser = MockUser();
+          when(() => mockAuthRepository.currentUser).thenReturn(mockUser);
+          when(
+            () => mockAuthRepository.getCurrentUserProfile(),
+          ).thenThrow(Exception('firestore down'));
+          when(() => mockAuthRepository.signOut()).thenAnswer((_) async {});
+        },
+        build: () => authBloc,
+        act: (bloc) => bloc.add(AuthCheckRequested()),
+        expect: () => [const AuthState(status: AuthStatus.unauthenticated)],
+        verify: (_) {
+          verify(() => mockAuthRepository.signOut()).called(1);
+        },
+      );
     });
 
     group('AuthLoginRequested', () {

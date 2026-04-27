@@ -24,6 +24,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _bioController;
   String? _newImagePath;
   bool _inited = false;
+  bool _isSaving = false;
 
   @override
   void didChangeDependencies() {
@@ -65,22 +66,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final newUsername = _usernameController.text.trim();
     final newBio = _bioController.text.trim();
+    final hasUsernameChange =
+        newUsername.isNotEmpty && newUsername != user.username;
+    final hasBioChange = newBio != user.bio;
+    final hasImageChange = _newImagePath != null;
 
-    if (newUsername != user.username && newUsername.isNotEmpty) {
-      context.read<ProfileBloc>().add(
-        ProfileUpdateUsernameRequested(username: newUsername),
-      );
-    }
-    if (newBio != user.bio) {
-      context.read<ProfileBloc>().add(ProfileUpdateBioRequested(bio: newBio));
-    }
-    if (_newImagePath != null) {
-      context.read<ProfileBloc>().add(
-        ProfileUpdateImageRequested(imagePath: _newImagePath!),
-      );
+    if (!hasUsernameChange && !hasBioChange && !hasImageChange) {
+      context.pop();
+      return;
     }
 
-    context.pop();
+    setState(() => _isSaving = true);
+    context.read<ProfileBloc>().add(
+      ProfileSaveRequested(
+        username: hasUsernameChange ? newUsername : null,
+        bio: hasBioChange ? newBio : null,
+        imagePath: _newImagePath,
+      ),
+    );
   }
 
   @override
@@ -93,7 +96,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: BlocBuilder<ProfileBloc, ProfileState>(
+      body: BlocConsumer<ProfileBloc, ProfileState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.errorMessage != current.errorMessage,
+        listener: (context, state) {
+          if (_isSaving && state.status == ProfileStatus.loaded) {
+            context.pop();
+            return;
+          }
+          if (state.status == ProfileStatus.error &&
+              state.errorMessage != null &&
+              state.errorMessage!.isNotEmpty) {
+            if (mounted) {
+              setState(() => _isSaving = false);
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage!)),
+            );
+          }
+        },
         builder: (context, state) {
           final user = state.user;
           if (user == null) return const SizedBox.shrink();

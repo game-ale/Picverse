@@ -14,6 +14,11 @@ class NotificationRepositoryImpl implements NotificationRepository {
   }
 
   @override
+  Stream<List<NotificationModel>> watchNotifications(String userId) {
+    return _firestoreService.watchNotifications(userId);
+  }
+
+  @override
   Future<void> sendNotification({
     required String userId,
     required String type,

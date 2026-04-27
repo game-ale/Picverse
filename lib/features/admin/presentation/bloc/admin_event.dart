@@ -11,9 +11,15 @@ class AdminLoadDashboard extends AdminEvent {}
 
 class AdminLoadUsers extends AdminEvent {}
 
+class AdminLoadMoreUsers extends AdminEvent {}
+
 class AdminLoadPosts extends AdminEvent {}
 
+class AdminLoadMorePosts extends AdminEvent {}
+
 class AdminLoadReports extends AdminEvent {}
+
+class AdminLoadMoreReports extends AdminEvent {}
 
 class AdminBanUser extends AdminEvent {
   final String userId;

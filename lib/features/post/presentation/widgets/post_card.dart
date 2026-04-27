@@ -293,25 +293,30 @@ class _PostCardState extends State<PostCard>
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
-            for (final (label, value) in reasons)
-              ListTile(
-                title: Text(label),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  final adminRepo =
-                      context.read<AdminRepository>();
-                  final uid =
-                      context.read<AuthService>().currentUser?.uid ?? '';
-                  adminRepo.createReport(
-                    postId: widget.post.postId,
-                    reportedBy: uid,
-                    reason: value,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Report submitted')),
-                  );
-                },
-              ),
+              for (final (label, value) in reasons)
+                ListTile(
+                  title: Text(label),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    final adminRepo = context.read<AdminRepository>();
+                    final uid = context.read<AuthService>().currentUser?.uid ?? '';
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await adminRepo.createReport(
+                        postId: widget.post.postId,
+                        reportedBy: uid,
+                        reason: value,
+                      );
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Report submitted')),
+                      );
+                    } catch (_) {
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Failed to submit report')),
+                      );
+                    }
+                  },
+                ),
           ],
         ),
       ),

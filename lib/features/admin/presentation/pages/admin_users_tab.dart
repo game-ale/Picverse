@@ -23,22 +23,48 @@ class AdminUsersTab extends StatelessWidget {
 
         return ListView.builder(
           padding: const EdgeInsets.all(12),
-          itemCount: state.users.length,
+          itemCount: state.users.length +
+              (state.usersLoadingMore ? 1 : 0) +
+              (state.usersHasReachedEnd ? 0 : 1),
           itemBuilder: (context, index) {
+            if (index >= state.users.length) {
+              if (state.usersLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => context.read<AdminBloc>().add(
+                      AdminLoadMoreUsers(),
+                    ),
+                    child: const Text('Load more users'),
+                  ),
+                ),
+              );
+            }
             final user = state.users[index];
-            return _UserTile(
-              username: user.username,
-              email: user.email,
-              followers: user.followersCount,
-              posts: user.postsCount,
-              role: user.role,
-              status: user.status,
-              onBan: () {
-                context.read<AdminBloc>().add(AdminBanUser(user.userId));
-              },
-              onUnban: () {
-                context.read<AdminBloc>().add(AdminUnbanUser(user.userId));
-              },
+            return Column(
+              children: [
+                _UserTile(
+                  username: user.username,
+                  email: user.email,
+                  followers: user.followersCount,
+                  posts: user.postsCount,
+                  role: user.role,
+                  status: user.status,
+                  onBan: () {
+                    context.read<AdminBloc>().add(AdminBanUser(user.userId));
+                  },
+                  onUnban: () {
+                    context.read<AdminBloc>().add(AdminUnbanUser(user.userId));
+                  },
+                ),
+              ],
             );
           },
         );

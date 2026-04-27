@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import 'package:picverse/core/constants/app_constants.dart';
 
 class StorageService {
-  SupabaseClient get _client => Supabase.instance.client;
+  FirebaseStorage get _storage => FirebaseStorage.instance;
 
   Future<String> uploadPostImage(
     String userId,
@@ -13,26 +13,25 @@ class StorageService {
     File file,
   ) async {
     final path = '$userId/$fileName';
-    await _client.storage
-        .from(AppConstants.postImagesBucket)
-        .upload(path, file);
-    return _client.storage
-        .from(AppConstants.postImagesBucket)
-        .getPublicUrl(path);
+    final ref = _storage.ref().child(AppConstants.postImagesBucket).child(path);
+    await ref.putFile(file);
+    return ref.getDownloadURL();
   }
 
   Future<void> deletePostImage(String userId, String fileName) async {
     final path = '$userId/$fileName';
-    await _client.storage.from(AppConstants.postImagesBucket).remove([path]);
+    await _storage.ref().child(AppConstants.postImagesBucket).child(path).delete();
   }
 
   Future<String> uploadProfileImage(String userId, File file) async {
-    final path = '$userId/avatar.jpg';
-    await _client.storage
-        .from(AppConstants.profileImagesBucket)
-        .upload(path, file, fileOptions: const FileOptions(upsert: true));
-    return _client.storage
-        .from(AppConstants.profileImagesBucket)
-        .getPublicUrl(path);
+    // Use a unique filename so the download URL changes and cached avatars refresh.
+    final path = '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref =
+        _storage.ref().child(AppConstants.profileImagesBucket).child(path);
+    await ref.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    return ref.getDownloadURL();
   }
 }

@@ -2,6 +2,7 @@ import 'package:picverse/features/feed/domain/repositories/feed_repository.dart'
 import 'package:picverse/core/services/connectivity_service.dart';
 import 'package:picverse/core/services/firestore_service.dart';
 import 'package:picverse/core/local/local_cache_service.dart';
+import 'package:picverse/core/constants/app_constants.dart';
 import 'package:picverse/features/post/data/models/post_model.dart';
 
 class FeedRepositoryImpl implements FeedRepository {
@@ -23,12 +24,18 @@ class FeedRepositoryImpl implements FeedRepository {
   }
 
   @override
-  Future<List<PostModel>> getFeedPosts(List<String> followingIds) async {
+  Future<List<PostModel>> getFeedPosts(
+    List<String> followingIds, [
+    int limit = AppConstants.feedPageSize,
+  ]) async {
     if (!_connectivityService.isOnline) {
       return _cacheService.getCachedFeedPosts();
     }
 
-    final posts = await _firestoreService.getFeedPosts(followingIds);
+    final posts = await _firestoreService.getFeedPosts(
+      followingIds,
+      limit: limit,
+    );
     // Cache in background
     _cacheService.cacheFeedPosts(posts);
     return posts;

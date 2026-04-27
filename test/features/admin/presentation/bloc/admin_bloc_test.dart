@@ -43,11 +43,10 @@ void main() {
         act: (bloc) => bloc.add(AdminLoadDashboard()),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          AdminState(
-            status: AdminStatus.loaded,
-            stats: tStats,
-            reports: tReports,
-          ),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.stats, 'stats', tStats)
+              .having((s) => s.reports, 'reports', tReports),
         ],
       );
 
@@ -81,7 +80,9 @@ void main() {
         act: (bloc) => bloc.add(AdminLoadUsers()),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          AdminState(status: AdminStatus.loaded, users: tUsers),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.users, 'users', tUsers),
         ],
       );
 
@@ -115,7 +116,9 @@ void main() {
         act: (bloc) => bloc.add(AdminLoadPosts()),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          AdminState(status: AdminStatus.loaded, posts: tPosts),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.posts, 'posts', tPosts),
         ],
       );
     });
@@ -132,7 +135,9 @@ void main() {
         act: (bloc) => bloc.add(AdminLoadReports()),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          AdminState(status: AdminStatus.loaded, reports: tReports),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.reports, 'reports', tReports),
         ],
       );
     });
@@ -151,7 +156,9 @@ void main() {
         expect: () => [
           // AdminLoadUsers dispatches: loading + loaded
           const AdminState(status: AdminStatus.loading),
-          AdminState(status: AdminStatus.loaded, users: tUsers),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.users, 'users', tUsers),
         ],
       );
 
@@ -185,7 +192,9 @@ void main() {
         act: (bloc) => bloc.add(const AdminUnbanUser('u2')),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          AdminState(status: AdminStatus.loaded, users: tUsers),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.users, 'users', tUsers),
         ],
       );
 
@@ -219,7 +228,9 @@ void main() {
         act: (bloc) => bloc.add(const AdminDeletePost('p1')),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          const AdminState(status: AdminStatus.loaded, posts: []),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.posts, 'posts', []),
         ],
       );
 
@@ -257,7 +268,9 @@ void main() {
         act: (bloc) => bloc.add(const AdminResolveReport('r1')),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          const AdminState(status: AdminStatus.loaded, reports: []),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.reports, 'reports', []),
         ],
       );
 
@@ -295,7 +308,9 @@ void main() {
         act: (bloc) => bloc.add(const AdminDismissReport('r1')),
         expect: () => [
           const AdminState(status: AdminStatus.loading),
-          const AdminState(status: AdminStatus.loaded, reports: []),
+          isA<AdminState>()
+              .having((s) => s.status, 'status', AdminStatus.loaded)
+              .having((s) => s.reports, 'reports', []),
         ],
       );
 

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 import 'package:picverse/core/utils/validators.dart';
 import 'package:picverse/core/widgets/primary_button.dart';
 import 'package:picverse/features/auth/presentation/bloc/auth_bloc.dart';
@@ -44,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: AuthGradientBackground(
         child: SafeArea(
@@ -97,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    const Text(
-                      'Welcome Back',
-                      style: TextStyle(
+                    Text(
+                      l10n.text('welcomeBack'),
+                      style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -107,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Sign in to continue to Picverse',
+                      l10n.text('signInContinue'),
                       style: TextStyle(fontSize: 14, color: AppColors.grey400),
                     ),
 
@@ -127,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             AuthTextField(
                               controller: _emailController,
-                              hintText: 'Email address',
+                              hintText: l10n.text('emailAddress'),
                               prefixIcon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: Validators.email,
@@ -135,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 16),
                             AuthTextField(
                               controller: _passwordController,
-                              hintText: 'Password',
+                              hintText: l10n.text('password'),
                               prefixIcon: Icons.lock_outline,
                               obscureText: _obscurePassword,
                               onToggleObscure: () => setState(
@@ -147,11 +149,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Forgot password
                             Align(
                               alignment: Alignment.centerRight,
-                              child: TextButton(
+                                child: TextButton(
                                 onPressed: () =>
                                     context.push('/reset-password'),
                                 child: Text(
-                                  'Forgot Password?',
+                                  l10n.text('forgotPassword'),
                                   style: TextStyle(
                                     color: AppColors.primaryLight,
                                     fontSize: 13,
@@ -165,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, state) {
                                 return PrimaryButton(
-                                  text: 'Sign In',
+                                  text: l10n.text('signIn'),
                                   isLoading: state.status == AuthStatus.loading,
                                   onPressed: _onLogin,
                                 );
@@ -187,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     horizontal: 12,
                                   ),
                                   child: Text(
-                                    'or',
+                                    l10n.text('or'),
                                     style: TextStyle(
                                       color: AppColors.grey500,
                                       fontSize: 13,
@@ -213,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Icons.g_mobiledata_rounded,
                                 size: 24,
                               ),
-                              label: const Text('Continue with Google'),
+                              label: Text(l10n.text('continueWithGoogle')),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(double.infinity, 50),
@@ -237,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Don't have an account? ",
+                          l10n.text('dontHaveAccount'),
                           style: TextStyle(
                             color: AppColors.grey400,
                             fontSize: 14,
@@ -245,8 +247,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         GestureDetector(
                           onTap: () => context.push('/register'),
-                          child: const Text(
-                            'Sign Up',
+                          child: Text(
+                            l10n.text('createAccount'),
                             style: TextStyle(
                               color: AppColors.primaryPurple,
                               fontSize: 14,

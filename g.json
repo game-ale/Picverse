@@ -1,0 +1,11 @@
+{
+ "vehicle_id": "V001",
+ "fuel_level": 45,
+ "location": {
+   "lat": 8.55,
+   "lng": 39.27
+ },
+ "engine_status": "ON",
+ "timestamp": "2026-04-09T10:00:00",
+ "alert": "none"
+}

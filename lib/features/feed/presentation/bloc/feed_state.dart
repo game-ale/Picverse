@@ -10,6 +10,8 @@ class FeedState extends Equatable {
   final Set<String> likedPostIds;
   final String? errorMessage;
   final bool isOffline;
+  final bool isLoadingMore;
+  final bool hasReachedEnd;
 
   const FeedState({
     this.status = FeedStatus.initial,
@@ -17,6 +19,8 @@ class FeedState extends Equatable {
     this.likedPostIds = const {},
     this.errorMessage,
     this.isOffline = false,
+    this.isLoadingMore = false,
+    this.hasReachedEnd = false,
   });
 
   FeedState copyWith({
@@ -25,6 +29,8 @@ class FeedState extends Equatable {
     Set<String>? likedPostIds,
     String? errorMessage,
     bool? isOffline,
+    bool? isLoadingMore,
+    bool? hasReachedEnd,
   }) {
     return FeedState(
       status: status ?? this.status,
@@ -32,6 +38,8 @@ class FeedState extends Equatable {
       likedPostIds: likedPostIds ?? this.likedPostIds,
       errorMessage: errorMessage,
       isOffline: isOffline ?? this.isOffline,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasReachedEnd: hasReachedEnd ?? this.hasReachedEnd,
     );
   }
 
@@ -42,5 +50,7 @@ class FeedState extends Equatable {
     likedPostIds,
     errorMessage,
     isOffline,
+    isLoadingMore,
+    hasReachedEnd,
   ];
 }

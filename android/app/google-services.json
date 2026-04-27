@@ -12,7 +12,20 @@
           "package_name": "com.picverse.picverse"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "87924268460-9m1jo1rqcmi5auquu8pqp6599l2jmqt0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.picverse.picverse",
+            "certificate_hash": "f595831eeb431412ddd8d45cb5f82d6f1969e6bc"
+          }
+        },
+        {
+          "client_id": "87924268460-575ouc09aggi58bsoomi284cblmp71fb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCg0P2opiKIinGm39_GRL-TxZ-YibkL1Pk"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "87924268460-575ouc09aggi58bsoomi284cblmp71fb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

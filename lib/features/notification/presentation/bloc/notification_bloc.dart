@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:picverse/features/notification/data/models/notification_model.dart';
 import 'package:picverse/features/notification/domain/repositories/notification_repository.dart';
 import 'package:picverse/core/services/auth_service.dart';
 import 'package:picverse/features/notification/presentation/bloc/notification_event.dart';
@@ -8,6 +11,7 @@ import 'package:picverse/features/notification/presentation/bloc/notification_st
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationRepository _notificationRepository;
   final AuthService _authService;
+  StreamSubscription<List<NotificationModel>>? _notificationsSub;
 
   NotificationBloc({
     required NotificationRepository notificationRepository,
@@ -18,6 +22,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationLoadRequested>(_onLoad);
     on<NotificationMarkReadRequested>(_onMarkRead);
     on<NotificationMarkAllReadRequested>(_onMarkAllRead);
+    on<_NotificationStreamUpdated>(_onStreamUpdated);
+    on<_NotificationStreamFailed>(_onStreamFailed);
   }
 
   Future<void> _onLoad(
@@ -32,9 +38,24 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         state.copyWith(
           status: NotificationStatus.loaded,
           notifications: notifications,
+          errorMessage: null,
         ),
       );
-    } catch (e) {
+
+      try {
+        await _notificationsSub?.cancel();
+        _notificationsSub = _notificationRepository.watchNotifications(uid).listen(
+          (notifications) {
+            add(_NotificationStreamUpdated(notifications));
+          },
+          onError: (_) {
+            add(_NotificationStreamFailed());
+          },
+        );
+      } catch (_) {
+        // Keep the initial load working even if live updates are unavailable.
+      }
+    } catch (_) {
       emit(
         state.copyWith(
           status: NotificationStatus.error,
@@ -49,7 +70,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) async {
     await _notificationRepository.markAsRead(event.notificationId);
-    add(NotificationLoadRequested());
   }
 
   Future<void> _onMarkAllRead(
@@ -58,6 +78,47 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   ) async {
     final uid = _authService.currentUser!.uid;
     await _notificationRepository.markAllAsRead(uid);
-    add(NotificationLoadRequested());
+  }
+
+  void _onStreamUpdated(
+    _NotificationStreamUpdated event,
+    Emitter<NotificationState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: NotificationStatus.loaded,
+        notifications: event.notifications,
+        errorMessage: null,
+      ),
+    );
+  }
+
+  void _onStreamFailed(
+    _NotificationStreamFailed event,
+    Emitter<NotificationState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: NotificationStatus.error,
+        errorMessage: 'Failed to load notifications',
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() async {
+    await _notificationsSub?.cancel();
+    return super.close();
   }
 }
+
+class _NotificationStreamUpdated extends NotificationEvent {
+  final List<NotificationModel> notifications;
+
+  const _NotificationStreamUpdated(this.notifications);
+
+  @override
+  List<Object?> get props => [notifications];
+}
+
+class _NotificationStreamFailed extends NotificationEvent {}

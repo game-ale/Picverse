@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:picverse/core/constants/app_colors.dart';
+import 'package:picverse/core/local/app_localizations.dart';
 import 'package:picverse/core/utils/validators.dart';
 import 'package:picverse/core/widgets/primary_button.dart';
 import 'package:picverse/features/auth/presentation/bloc/auth_bloc.dart';
@@ -64,6 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: AuthGradientBackground(
         child: SafeArea(
@@ -114,19 +116,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 24),
 
-                  const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                    Text(
+                      l10n.text('createAccount'),
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 6),
-                  Text(
-                    'Join Picverse and start sharing',
-                    style: TextStyle(fontSize: 14, color: AppColors.grey400),
-                  ),
+                    Text(
+                      l10n.text('joinAndShare'),
+                      style: TextStyle(fontSize: 14, color: AppColors.grey400),
+                    ),
 
                   const SizedBox(height: 32),
 
@@ -144,14 +146,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           AuthTextField(
                             controller: _usernameController,
-                            hintText: 'Username',
+                            hintText: l10n.text('username'),
                             prefixIcon: Icons.person_outline,
                             validator: Validators.username,
                           ),
                           const SizedBox(height: 16),
                           AuthTextField(
                             controller: _emailController,
-                            hintText: 'Email address',
+                            hintText: l10n.text('emailAddress'),
                             prefixIcon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             validator: Validators.email,
@@ -159,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 16),
                           AuthTextField(
                             controller: _passwordController,
-                            hintText: 'Password',
+                            hintText: l10n.text('password'),
                             prefixIcon: Icons.lock_outline,
                             obscureText: _obscurePassword,
                             onToggleObscure: () => setState(
@@ -170,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 16),
                           AuthTextField(
                             controller: _confirmPasswordController,
-                            hintText: 'Confirm Password',
+                            hintText: l10n.text('confirmPassword'),
                             prefixIcon: Icons.lock_outline,
                             obscureText: _obscureConfirm,
                             onToggleObscure: () => setState(
@@ -178,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             validator: (value) {
                               if (value != _passwordController.text) {
-                                return 'Passwords do not match';
+                                return l10n.text('passwordsDoNotMatch');
                               }
                               return Validators.password(value);
                             },
@@ -209,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'I agree to the Terms & Conditions',
+                                  l10n.text('agreeTerms'),
                                   style: TextStyle(
                                     color: AppColors.grey400,
                                     fontSize: 13,
@@ -224,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           BlocBuilder<AuthBloc, AuthState>(
                             builder: (context, state) {
                               return PrimaryButton(
-                                text: 'Create Account',
+                                text: l10n.text('createAccount'),
                                 isLoading: state.status == AuthStatus.loading,
                                 onPressed: _onRegister,
                               );
@@ -239,18 +241,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Expanded(
                                 child: Divider(color: AppColors.cardDarkBorder),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                child: Text(
-                                  'or',
-                                  style: TextStyle(
-                                    color: AppColors.grey500,
-                                    fontSize: 13,
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    l10n.text('or'),
+                                    style: TextStyle(
+                                      color: AppColors.grey500,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
-                              ),
                               Expanded(
                                 child: Divider(color: AppColors.cardDarkBorder),
                               ),
@@ -268,7 +270,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Icons.g_mobiledata_rounded,
                               size: 24,
                             ),
-                            label: const Text('Continue with Google'),
+                            label: Text(l10n.text('continueWithGoogle')),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               minimumSize: const Size(double.infinity, 50),
@@ -292,7 +294,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Already have an account? ',
+                        l10n.text('alreadyHaveAccount'),
                         style: TextStyle(
                           color: AppColors.grey400,
                           fontSize: 14,
@@ -300,8 +302,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       GestureDetector(
                         onTap: () => context.pop(),
-                        child: const Text(
-                          'Sign In',
+                        child: Text(
+                          l10n.text('signIn'),
                           style: TextStyle(
                             color: AppColors.primaryPurple,
                             fontSize: 14,

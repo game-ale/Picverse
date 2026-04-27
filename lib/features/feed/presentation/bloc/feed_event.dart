@@ -11,6 +11,8 @@ class FeedLoadRequested extends FeedEvent {}
 
 class FeedRefreshRequested extends FeedEvent {}
 
+class FeedLoadMoreRequested extends FeedEvent {}
+
 class FeedPostLikeToggled extends FeedEvent {
   final String postId;
   final bool isLiked;

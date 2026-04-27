@@ -25,88 +25,116 @@ class AdminPostsTab extends StatelessWidget {
 
         return ListView.builder(
           padding: const EdgeInsets.all(12),
-          itemCount: state.posts.length,
+          itemCount: state.posts.length +
+              (state.postsLoadingMore ? 1 : 0) +
+              (state.postsHasReachedEnd ? 0 : 1),
           itemBuilder: (context, index) {
+            if (index >= state.posts.length) {
+              if (state.postsLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => context.read<AdminBloc>().add(
+                      AdminLoadMorePosts(),
+                    ),
+                    child: const Text('Load more posts'),
+                  ),
+                ),
+              );
+            }
             final post = state.posts[index];
             final isDark = Theme.of(context).brightness == Brightness.dark;
 
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              color: isDark ? AppColors.cardDark : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: isDark
-                      ? AppColors.cardDarkBorder
-                      : AppColors.grey200,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: post.imageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          width: 60,
-                          height: 60,
-                          color: AppColors.grey200,
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          width: 60,
-                          height: 60,
-                          color: AppColors.grey200,
-                          child: const Icon(Icons.broken_image, size: 24),
-                        ),
-                      ),
+            return Column(
+              children: [
+                Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  color: isDark ? AppColors.cardDark : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isDark
+                          ? AppColors.cardDarkBorder
+                          : AppColors.grey200,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post.username,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : AppColors.grey900,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: post.imageUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(
+                              width: 60,
+                              height: 60,
+                              color: AppColors.grey200,
+                            ),
+                            errorWidget: (_, __, ___) => Container(
+                              width: 60,
+                              height: 60,
+                              color: AppColors.grey200,
+                              child: const Icon(Icons.broken_image, size: 24),
                             ),
                           ),
-                          if (post.caption.isNotEmpty)
-                            Text(
-                              post.caption,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppColors.grey500,
-                                fontSize: 13,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                post.username,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.grey900,
+                                ),
                               ),
-                            ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${post.likesCount} likes · ${post.commentsCount} comments · ${DateFormatter.timeAgo(post.createdAt)}',
-                            style: TextStyle(
-                              color: AppColors.grey400,
-                              fontSize: 11,
-                            ),
+                              if (post.caption.isNotEmpty)
+                                Text(
+                                  post.caption,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppColors.grey500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${post.likesCount} likes · ${post.commentsCount} comments · ${DateFormatter.timeAgo(post.createdAt)}',
+                                style: TextStyle(
+                                  color: AppColors.grey400,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () {
+                            _showDeleteDialog(context, post.postId);
+                          },
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () {
-                        _showDeleteDialog(context, post.postId);
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             );
           },
         );
