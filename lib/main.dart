@@ -14,17 +14,14 @@ import 'package:picverse/core/theme/app_theme.dart';
 import 'package:picverse/core/theme/theme_cubit.dart';
 import 'package:picverse/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:picverse/core/services/push_notification_service.dart';
-import 'package:picverse/firebase_options.dart';
 import 'package:picverse/injection_container.dart';
 import 'package:picverse/routes/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase with platform-specific options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Use native Firebase config files on mobile platforms.
+  await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Initialize Hive for local storage

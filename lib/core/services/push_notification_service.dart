@@ -7,13 +7,10 @@ import 'package:flutter/foundation.dart';
 
 import 'package:picverse/core/services/auth_service.dart';
 import 'package:picverse/core/services/firestore_service.dart';
-import 'package:picverse/firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
   debugPrint('Background FCM message: ${message.messageId}');
 }
 
